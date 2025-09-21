@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Planung & Disposition{% endblock %}
+{% block content %}
+<h2>Bedarfsplanung</h2>
+<p>
+  Diese Übersicht unterstützt die Materialdisposition, indem aktuelle Lagerbestände mit offenen Bestellungen
+  und hinterlegten Meldebeständen abgeglichen werden.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Überwachte Artikel</h3>
+    <p class="number">{{ summary.total_items }}</p>
+    <p>Artikel mit Bestandsbewertung</p>
+  </div>
+  <div class="card">
+    <h3>Bestellung empfohlen</h3>
+    <p class="number">{{ summary.needs_reorder }}</p>
+    <p>Artikel unter Meldebestand</p>
+  </div>
+  <div class="card">
+    <h3>Empfohlene Menge</h3>
+    <p class="number">{{ '%.1f' % summary.recommended_quantity }}</p>
+    <p>Gesamte Bestellvorschlagsmenge</p>
+  </div>
+  <div class="card">
+    <h3>Offene Bestellungen</h3>
+    <p class="number">{{ summary.open_orders }}</p>
+    <p>Laufende externe Bestellungen</p>
+  </div>
+</div>
+
+<section>
+  <h2>Dispositionsempfehlungen</h2>
+  <p>
+    In der Tabelle wird der aktuelle Bestand inklusive offener Bestellungen dem Meldebestand gegenübergestellt.
+    Für Artikel mit negativer Abdeckung wird eine Bestellmenge vorgeschlagen.
+  </p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Artikel</th>
+          <th>Artikelnummer</th>
+          <th>Meldebestand</th>
+          <th>Verfügbar</th>
+          <th>In Bestellung</th>
+          <th>Fehlmenge</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if suggestions %}
+          {% for suggestion in suggestions %}
+            <tr class="{% if suggestion.needs_reorder %}needs-reorder{% endif %}">
+              <td>{{ suggestion.name }}</td>
+              <td>{{ suggestion.sku }}</td>
+              <td>{{ suggestion.reorder_level }}</td>
+              <td>{{ '%.1f' % suggestion.on_hand }}</td>
+              <td>{{ '%.1f' % suggestion.on_order }}</td>
+              <td>{{ '%.1f' % suggestion.shortfall }}</td>
+              <td>
+                {% if suggestion.needs_reorder %}
+                  <span class="badge badge-warning">Bestellung: {{ '%.1f' % suggestion.suggested_order }}</span>
+                {% else %}
+                  {% if suggestion.coverage_gap < 0 %}
+                    <span class="badge badge-ok">Puffer: {{ '%.1f' % (-suggestion.coverage_gap) }}</span>
+                  {% else %}
+                    <span class="badge badge-ok">Bestand ausreichend</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7">Es wurden noch keine Artikel angelegt.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Offene Bestellungen</h2>
+  {% if open_orders %}
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Bestellnummer</th>
+            <th>Lieferant</th>
+            <th>Erwarteter Eingang</th>
+            <th>Status</th>
+            <th>Offene Positionen</th>
+            <th>Offene Menge</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in open_orders %}
+            {% set order = entry.order %}
+            <tr>
+              <td>{{ order.order_number }}</td>
+              <td>{{ order.supplier.name if order.supplier else '–' }}</td>
+              <td>{{ order.expected_date or '–' }}</td>
+              <td>{{ order.status.value }}</td>
+              <td>{{ entry.outstanding_lines }}</td>
+              <td>{{ '%.1f' % entry.remaining }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>Aktuell liegen keine offenen Bestellungen vor.</p>
+  {% endif %}
+</section>
+{% endblock %}
