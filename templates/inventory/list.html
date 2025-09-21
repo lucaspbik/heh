@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Bestände - Lagerverwaltung{% endblock %}
+{% block content %}
+<section>
+  <h2>Aktuelle Bestände</h2>
+  {% if stock_levels %}
+  <table>
+    <thead>
+      <tr>
+        <th>Artikel</th>
+        <th>Artikelnummer</th>
+        <th>Lagerort</th>
+        <th>Menge</th>
+        <th>Einheit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for level in stock_levels %}
+      <tr>
+        <td>{{ level.item.name }}</td>
+        <td>{{ level.item.sku }}</td>
+        <td>{{ level.location.name }}</td>
+        <td>{{ '%.2f'|format(level.quantity) }}</td>
+        <td>{{ level.item.unit_of_measure }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Noch keine Bestände erfasst.</p>
+  {% endif %}
+</section>
+
+<section class="form-section">
+  <h2>Lagerbewegung erfassen</h2>
+  <form method="post" action="{{ url_for('create_inventory_movement') }}" class="form-grid">
+    <label>Artikel
+      <select name="item_id" required>
+        <option value="" disabled selected>Bitte wählen</option>
+        {% for item in items %}
+        <option value="{{ item.id }}">{{ item.sku }} – {{ item.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Lagerort
+      <select name="location_id" required>
+        <option value="" disabled selected>Bitte wählen</option>
+        {% for location in locations %}
+        <option value="{{ location.id }}">{{ location.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Menge
+      <input type="number" name="quantity" step="0.01" required />
+    </label>
+    <label>Bewegungsart
+      <select name="transaction_type" required>
+        {% for transaction in transaction_types %}
+        <option value="{{ transaction.value }}">{{ transaction.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Referenz
+      <input type="text" name="reference" />
+    </label>
+    <label class="full-width">Bemerkung
+      <textarea name="note" rows="3"></textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit">Buchen</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <h2>Jüngste Bewegungen</h2>
+  {% if transactions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Zeitpunkt</th>
+        <th>Artikel</th>
+        <th>Lagerort</th>
+        <th>Menge</th>
+        <th>Typ</th>
+        <th>Referenz</th>
+        <th>Notiz</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in transactions %}
+      <tr>
+        <td>{{ tx.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td>{{ tx.item.name }}</td>
+        <td>{{ tx.location.name }}</td>
+        <td>{{ '%.2f'|format(tx.quantity) }}</td>
+        <td>{{ tx.transaction_type.value }}</td>
+        <td>{{ tx.reference or '-' }}</td>
+        <td>{{ tx.note or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Noch keine Bewegungen vorhanden.</p>
+  {% endif %}
+</section>
+{% endblock %}
