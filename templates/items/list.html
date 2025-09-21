@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Artikel - Lagerverwaltung{% endblock %}
+{% block content %}
+<section>
+  <h2>Artikelübersicht</h2>
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Artikelnummer</th>
+        <th>Bezeichnung</th>
+        <th>Einheit</th>
+        <th>Meldebestand</th>
+        <th>Beschreibung</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.sku }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.unit_of_measure }}</td>
+        <td>{{ item.reorder_level }}</td>
+        <td>{{ item.description or '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Noch keine Artikel vorhanden.</p>
+  {% endif %}
+</section>
+
+<section class="form-section">
+  <h2>Neuen Artikel anlegen</h2>
+  <form method="post" class="form-grid">
+    <label>Artikelnummer
+      <input type="text" name="sku" required />
+    </label>
+    <label>Bezeichnung
+      <input type="text" name="name" required />
+    </label>
+    <label>Einheit
+      <input type="text" name="unit_of_measure" value="Stk" />
+    </label>
+    <label>Meldebestand
+      <input type="number" name="reorder_level" min="0" value="0" />
+    </label>
+    <label class="full-width">Beschreibung
+      <textarea name="description" rows="3"></textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit">Speichern</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
