@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Bestellungen - Lagerverwaltung{% endblock %}
+{% block content %}
+<section>
+  <h2>Offene und laufende Bestellungen</h2>
+  {% if orders %}
+    {% for order in orders %}
+    <article class="card order-card">
+      <header>
+        <h3>Bestellung {{ order.order_number }}</h3>
+        <p>
+          Lieferant: {{ order.supplier.name if order.supplier else '–' }}
+          | Status: {{ order.status.value }}
+          | Erwartet: {{ order.expected_date.strftime('%d.%m.%Y') if order.expected_date else '–' }}
+        </p>
+        {% if order.notes %}
+        <p class="muted">{{ order.notes }}</p>
+        {% endif %}
+      </header>
+      <section>
+        <h4>Positionen</h4>
+        {% if order.lines %}
+        <table>
+          <thead>
+            <tr>
+              <th>Artikel</th>
+              <th>Beschreibung</th>
+              <th>Bestellt</th>
+              <th>Geliefert</th>
+              <th>Preis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in order.lines %}
+            <tr>
+              <td>{{ line.item.name if line.item else '–' }}</td>
+              <td>{{ line.description or '-' }}</td>
+              <td>{{ '%.2f'|format(line.ordered_quantity) }}</td>
+              <td>{{ '%.2f'|format(line.received_quantity) }}</td>
+              <td>{{ '%.2f'|format(line.unit_price) if line.unit_price is not none else '-' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>Noch keine Positionen erfasst.</p>
+        {% endif %}
+      </section>
+      <section class="form-section">
+        <h4>Position hinzufügen</h4>
+        <form method="post" action="{{ url_for('add_purchase_order_line', order_id=order.id) }}" class="form-grid">
+          <label>Artikel
+            <select name="item_id">
+              <option value="">Freitextposition</option>
+              {% for item in items %}
+              <option value="{{ item.id }}">{{ item.sku }} – {{ item.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Beschreibung
+            <input type="text" name="description" />
+          </label>
+          <label>Menge
+            <input type="number" name="ordered_quantity" step="0.01" required />
+          </label>
+          <label>Preis (optional)
+            <input type="number" name="unit_price" step="0.01" />
+          </label>
+          <div class="form-actions">
+            <button type="submit">Position speichern</button>
+          </div>
+        </form>
+      </section>
+      {% if order.lines %}
+      <section class="form-section">
+        <h4>Wareneingang erfassen</h4>
+        <form method="post" action="{{ url_for('receive_purchase_order', order_id=order.id) }}" class="form-grid">
+          <label>Position
+            <select name="line_id" required>
+              {% for line in order.lines %}
+              <option value="{{ line.id }}">{{ line.item.name if line.item else line.description }} (bestellt {{ '%.2f'|format(line.ordered_quantity) }})</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Gelieferte Menge
+            <input type="number" step="0.01" name="received_quantity" required />
+          </label>
+          <div class="form-actions">
+            <button type="submit">Wareneingang speichern</button>
+          </div>
+        </form>
+      </section>
+      {% endif %}
+    </article>
+    {% endfor %}
+  {% else %}
+  <p>Keine Bestellungen vorhanden.</p>
+  {% endif %}
+</section>
+
+<section class="form-section">
+  <h2>Neue Bestellung anlegen</h2>
+  <form method="post" class="form-grid">
+    <label>Bestellnummer
+      <input type="text" name="order_number" required />
+    </label>
+    <label>Lieferant
+      <select name="supplier_id">
+        <option value="">–</option>
+        {% for supplier in suppliers %}
+        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Status
+      <select name="status_value">
+        {% for status_value in status_values %}
+        <option value="{{ status_value.value }}">{{ status_value.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Erwartetes Lieferdatum
+      <input type="date" name="expected_date" />
+    </label>
+    <label class="full-width">Notizen
+      <textarea name="notes" rows="3"></textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit">Bestellung anlegen</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
